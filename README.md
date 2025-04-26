@@ -1,5 +1,7 @@
 # 7702 Workshop Material
 
+### See the demo repo here: https://github.com/jooohneth/7702-demo
+
 This is a Next.js application generated with
 [Create Fumadocs](https://github.com/fuma-nama/fumadocs).
 

@@ -1,0 +1,115 @@
+---
+title: Contract
+description: Setup the contract.
+---
+
+### 1. Deploy Contract
+
+First and foremost, we must deploy a contract with the source code of which we want to enhance our EOA with.
+In our case, it's a going to be a very simple batch execution contract.
+
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+contract Delegate {
+    struct Call {
+        bytes data;
+        address to;
+        uint256 value;
+    }
+
+    function execute(Call[] calldata calls) external payable {
+        for (uint256 i = 0; i < calls.length; i++) {
+            Call memory call = calls[i];
+            (bool success, ) = call.to.call{value: call.value}(call.data);
+            require(success, "call reverted");
+        }
+    }
+
+    fallback() external payable {}
+    receive() external payable {}
+}
+
+```
+
+For simplicity, i'll asusume you know how to deploy this contract on Ethereum Sepolia, I suggest using one of these tools: 
+- [Remix IDE](https://remix.ethereum.org/)
+- [Foundry](https://getfoundry.sh/)
+- [Hardhat](https://hardhat.org/)
+
+OR 
+
+if you just wanna quickly go through this and not mess around with contracts, you can use my already [deployed contract](https://sepolia.etherscan.io/address/0xF98F5336b4a6fdcD4bB620e00cF66Ef8101949E1#code)
+
+
+### 2. `src/lib/contract.ts` setup
+
+We gotta fill in the details like abi and address of the contracts that we're interacting with from our frontend. 
+
+
+<Callout type="info">
+    Note: the MNT contract details are already added, you don't need to modify that. 
+    As well as the Delegate contract's abi, assuming you're using the same contract code as me. 
+</Callout>
+
+After updating the Delegate contract's address, you should have a structure like this:
+
+```ts
+export const MNTContract = {
+  address: "0x64ad5bc6ce7b02be1d9970ae9296b4e4480ed1e1",
+  abi: [
+    {
+      inputs: [
+        { internalType: "address", name: "to", type: "address" },
+        { internalType: "uint256", name: "amount", type: "uint256" },
+      ],
+      name: "mint",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+    {
+      inputs: [
+        { internalType: "address", name: "to", type: "address" },
+        { internalType: "uint256", name: "value", type: "uint256" },
+      ],
+      name: "transfer",
+      outputs: [{ internalType: "bool", name: "", type: "bool" }],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
+  ],
+};
+
+export const DelegateContract = {
+  address: "0xF98F5336b4a6fdcD4bB620e00cF66Ef8101949E1",
+  abi: [
+    { type: "fallback", stateMutability: "payable" },
+    { type: "receive", stateMutability: "payable" },
+    {
+      type: "function",
+      name: "execute",
+      inputs: [
+        {
+          name: "calls",
+          type: "tuple[]",
+          internalType: "struct Delegate.Call[]",
+          components: [
+            { name: "data", type: "bytes", internalType: "bytes" },
+            { name: "to", type: "address", internalType: "address" },
+            { name: "value", type: "uint256", internalType: "uint256" },
+          ],
+        },
+      ],
+      outputs: [],
+      stateMutability: "payable",
+    },
+  ],
+} as const;
+
+```
+
+Once that's finished, we should be good to move forward. 
+
+

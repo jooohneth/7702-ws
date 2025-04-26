@@ -1,0 +1,30 @@
+---
+title: Introduction
+description: This is a very small and minimalistic example of what building in the post-7702 world looks like.
+---
+
+<Callout type="warn">
+  Note: most features in this workshop are still in "experimental" mode, please don't use this in production and wait until the upcoming Ethereum Hardfork to go live. 
+
+  This workshop is for educational purposes only.
+</Callout>
+
+
+### What is this workshop?
+
+In this workshop, we'll explore how to build a very simple starter app that allows users to:
+- authenticate with an X account (this could be extended to any social account)
+- enhance their EOA with the functionality of sending batch transactions.
+- send transctions gaslessly using a relayer.
+
+The code that allows us to do this is super minimalistic and easy, thanks to the tools: 
+
+- [Viem](https://viem.sh)
+- [Privy](https://privy.io)
+
+### What are we building?
+
+The program itself will just mint a bunch of MNT Tokens on Sepolia, and airdrop them to a random wallet all within a single batch transaction without the embedded wallet needing to have gas ETH, nor have an EOA wallet for that matter, thx to social login and embedded wallets.
+
+
+##### Learn more about EIP-7702 in the next seciton.

@@ -1,0 +1,47 @@
+---
+title: Clone
+description: Clone the starter repo.
+---
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/jooohneth/7702-privy-viem
+
+cd 7702-privy-viem
+
+```
+
+### 2. Install dependencies
+
+```bash
+pnpm install
+```
+
+### 3. Run the project
+
+```bash
+pnpm dev
+```
+
+### 4. Project Structure
+
+```
+7702/
+├── src/
+│   ├── components/
+│   │   └── ui/                 -- shadcn ui components
+│   │       ├── button.tsx
+│   │       └── sonner.tsx
+│   ├── style/
+│   │   ├── App.css            
+│   │   └── index.css
+│   ├── lib/                    
+│   │   ├── client.ts           -- viem clients
+│   │   ├── contract.ts         -- contract addr and abi
+│   │   └── utils.ts            -- utils (i.e. formatters, etc...)
+│   ├── App.tsx                 -- app component (this is where we code)
+│   ├── main.tsx                -- main entry point
+│   └── vite-env.d.ts
+├── rest of the files...
+```

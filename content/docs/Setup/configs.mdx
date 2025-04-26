@@ -1,0 +1,54 @@
+---
+title: Config & Provider
+description: Setup configs and providers.
+---
+
+<Callout type="warn">
+    Note: don't deploy production code where you're using client side environment variables, 
+    like in our case `VITE_PRIVY_APP_ID`, this is just for demo purposes.
+</Callout>
+
+
+### 1. `src/lib/config.ts` setup
+
+The only config we're using for this simple project is the Privy config that will then be passed into the `PrivyProvider` component.
+
+```ts
+if (!import.meta.env.VITE_PRIVY_APP_ID) {
+  throw new Error("VITE_PRIVY_APP_ID is not set in the environment variables.");
+}
+
+export const privyConfig = {
+  appId: import.meta.env.VITE_PRIVY_APP_ID,
+  config: {
+    embeddedWallets: {
+      showWalletUIs: false,
+      createOnLogin: "all-users",
+    },
+  },
+};
+```
+
+<Callout type="info">
+    Note: `createOnLogin: "all-users"` means that all the connected users will have embedded wallets created for them automatically.
+    This is important since we rely on the embedded wallet to act as our EOA that would be enhance with code.
+</Callout>
+
+### 2. `src/lib/main.tsx` setup
+
+This would be our main entry point for the app, and we want to wrap the app in the PrivyProvider component. 
+
+```tsx
+import { PrivyProvider, PrivyClientConfig } from "@privy-io/react-auth";
+
+createRoot(document.getElementById("root")!).render(
+  <PrivyProvider
+    appId={privyConfig.appId}
+    config={privyConfig.config as PrivyClientConfig}
+  >
+    <App />
+  </PrivyProvider>
+);
+```
+
+Should be it for our `main.tsx` file, let's move on to the next section.

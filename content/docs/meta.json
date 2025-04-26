@@ -1,0 +1,5 @@
+{
+  "title": "7702 Workshop",
+  "description": "Just a workshop",
+  "pages": ["index", "overview", "Setup", "implementation"]
+}

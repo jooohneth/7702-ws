@@ -1,0 +1,70 @@
+---
+title: Overview
+description: An overview of EIP-7702, its impact, timeline, and upcoming inclusion in Ethereum's Pectra hardfork.
+---
+
+
+## What is EIP-7702?
+
+EIP-7702 is a proposal to introduce a new transaction type (SET_CODE_TX_TYPE, 0x04) that allows externally owned accounts (EOAs) to temporarily or permanently delegate their behavior to a smart contract, effectively turning any EOA into a smart account. This is achieved by letting an EOA specify a *delegation designator*-a special code pointing to a smart contract implementation. When active, any transaction sent to the EOA will execute the code at the designated contract address, but the EOA's address remains the `msg.sender`.
+
+> "EIP-7702 enables EOAs to delegate control to smart contract accounts that can execute code directly from their addresses. It is compatible with the prevailing AA standard, ERC-4337, so existing wallets can become smart contract wallets without creating a new address and transferring assets."  
+> - Alchemy
+
+## Key Features & Use Cases
+
+- **Transaction Batching**: Combine multiple operations (e.g., token approval + swap) into a single atomic transaction, improving UX and reducing gas costs.
+- **Gas Sponsorship**: Allow third parties or apps to pay transaction fees for users, or enable users to pay gas in ERC-20 tokens instead of ETH.
+- **Permission Management**: Assign sub-keys with restricted capabilities (e.g., only interact with certain dApps, limit spending to a daily quota, etc.).
+- **Session Keys & Account Recovery**: Enable temporary session keys for smoother dApp interactions and easier account recovery flows.
+- **Seamless Migration Path**: Unlike previous proposals, EIP-7702 is fully compatible with ERC-4337, enabling existing EOAs to gain smart wallet features without changing addresses or migrating assets.
+
+## How Does EIP-7702 Work?
+
+- The EOA signs a special authorization message to delegate execution to a smart contract.
+- This authorization is included in a transaction, updating the EOA's delegation designator (`0xef0100 || address`).
+- As long as the delegation is active, transactions to the EOA execute the smart contract code at the specified address.
+- To revoke, the user sends another EIP-7702 transaction to reset the delegation.
+
+## Security Considerations
+
+- **Entrusted Contract Security**: The smart contract code must be thoroughly audited to prevent vulnerabilities.
+- **Signature Verification**: Correctly verify user signatures to avoid unauthorized actions.
+- **Replay Protection**: Implement nonce or other mechanisms to prevent replay attacks.
+
+## Timeline
+
+| Date        | Event/Update                                                                                  |
+|-------------|----------------------------------------------------------------------------------------------|
+| May 2024    | Vitalik Buterin introduces EIP-7702, quickly gaining positive feedback from the community. |
+| Q3 2024     | Refinement phase: Proposal evolves to store a contract address, not full code, for flexibility.|
+| Q1 2025     | EIP-7702 is scheduled for inclusion in Ethereum's Pectra hardfork, likely March or April.|
+| Now         | Developers can experiment with EIP-7702 on testnets (e.g., Ithaca's Odyssey, Sepolia).           |
+
+## Why Does EIP-7702 Matter?
+
+EIP-7702 represents a major step toward Ethereum's vision of *account abstraction*, making onchain experiences more flexible, user-friendly, and secure. By bridging EOAs and smart contract accounts, it enables powerful new features-batching, gas sponsorship, permissioned keys-without requiring users to migrate wallets or assets.
+
+## Further Reading
+
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <Card href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-7702.md" className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+    <h3 className="text-lg font-semibold">EIP-7702 Specification</h3>
+    <p className="text-sm text-gray-500 mt-2">The official EIP specification document on GitHub.</p>
+  </Card>
+
+  <Card href="https://viem.sh/docs/eip7702" className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+    <h3 className="text-lg font-semibold">Viem: EIP-7702 Overview</h3>
+    <p className="text-sm text-gray-500 mt-2">Technical documentation for implementing EIP-7702 using Viem library.</p>
+  </Card>
+  
+  <Card href="https://docs.privy.io/recipes/react/eip-7702" className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+    <h3 className="text-lg font-semibold">Privy -> EIP-7702</h3>
+    <p className="text-sm text-gray-500 mt-2">Implementation guide for EIP-7702 using Privy authentication.</p>
+  </Card>
+  
+  <Card href="https://www.quicknode.com/guides/ethereum-development/smart-contracts/eip-7702-smart-accounts" className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+    <h3 className="text-lg font-semibold">QuickNode: EIP-7702 Smart Accounts Guide</h3>
+    <p className="text-sm text-gray-500 mt-2">Practical guide for developers implementing smart accounts with EIP-7702.</p>
+  </Card>
+</div>

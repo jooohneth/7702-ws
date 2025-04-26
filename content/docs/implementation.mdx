@@ -1,0 +1,227 @@
+---
+title: Implementation
+description: Jumping straight into the code.
+---
+
+Let's open up the `App.tsx` file and see what's up.
+
+<Callout type="info">
+    Ignore the UI components defined below the `App` component, those are not relevant to the functionality of the workshop.
+</Callout>
+
+To be fair, you can ignore most of the code in this file since it's primarily UI code for us to track the states,
+but the `App` component is where the logic happens. 
+
+Specifically, in these three functions:
+
+```tsx
+  const onAuthorize = async () => {};
+
+  const onUnauthorize = async () => {};
+
+  const onExecute = async () => {};
+```
+
+As you might have guessed by the name of these functions, they are going to be used to:
+- Sign an authorization to use the source code of our delegate contract.
+- Remove an authorization signed by the embedded wallet.
+- Execute a batch transaction that would 
+    1. Mint 100 MNT tokens to the embedded wallet.
+    2. Send 10 MNT to the mock account.
+
+Let's see how we can implement these functions.
+
+### 1. `onAuthorize`
+```tsx
+  const onAuthorize = async () => {
+    setIsLoading(true);
+
+    // (Optional) Get the nonce of the relay client
+    const nonce = await publicClient.getTransactionCount({
+      address: relayClient.account.address as Address,
+    });
+
+    // (Optional) Hash the authorization
+    const authorizationHash = hashAuthorization({
+      contractAddress: DelegateContract.address as Address,
+      chainId: sepolia.id,
+      nonce: nonce,
+    });
+    setAuthorizationHash(authorizationHash);
+
+    // (Important) Sign the authorization using the embedded wallet
+    const signedAuthorization = await signAuthorization({
+      contractAddress: DelegateContract.address as Address,
+      chainId: sepolia.id,
+    });
+
+    // Store it in the state to be used when executing the tx in `onExecute`
+    setAuthorization(signedAuthorization);
+
+    setIsLoading(false);
+    toast.success("Authorized");
+  };
+```
+
+Quick brief:
+- Getting the nonce is optional, but may be useful to understand. 
+- Hashing the authorization is also optional, but might be useful for debugging.
+- Signing and storing the authorization is the most important part,
+without it the relay client won't be able call functions on our embedded wallet.
+
+<Callout type="info">
+    Note: the `signAuthorization` function is a helper function from Privy that allows to sign the authorization using the embedded wallet. 
+    Also, obtained through the `useSignAuthorization` hook.
+
+    ```tsx
+        import { useSignAuthorization } from "@privy-io/react-auth";
+
+        const { signAuthorization } = useSignAuthorization();
+    ```
+
+</Callout>
+
+### 2. `onExecute`
+
+```tsx
+  const onExecute = async () => {
+    setIsLoading(true);
+
+    // (Optional) Verify the authorization
+    const valid = await verifyAuthorization({
+      address: embeddedWallet?.address as Address,
+      authorization: authorization as Authorization,
+    });
+    if (!valid) {
+      toast.error("Invalid authorization");
+      setIsLoading(false);
+      return;
+    }
+
+    // (Important) Execute the transaction
+    const tx = await relayClient?.writeContract({
+      abi: DelegateContract.abi, 
+      address: embeddedWallet?.address as Address, // the "contract" we're calling is the embedded wallet
+      functionName: "execute",
+      args: [
+        [
+          // First tx: Mint 100 MNT to the embedded wallet
+          {
+            data: encodeFunctionData({
+              abi: MNTContract.abi,
+              functionName: "mint",
+              args: [embeddedWallet?.address as Address, parseEther("100")],
+            }),
+            to: MNTContract.address as Address,
+            value: 0n,
+          },
+          // Second tx: Send 10 MNT to the mock account
+          {
+            data: encodeFunctionData({
+              abi: MNTContract.abi,
+              functionName: "transfer",
+              args: [mockAccount, parseEther("10")],
+            }),
+            to: MNTContract.address as Address,
+            value: 0n,
+          },
+        ],
+      ],
+      authorizationList: [authorization!], // the authorization we signed in `onAuthorize`
+    });
+    setTxHash(tx);
+
+    // (Optional) Wait for the transaction receipt
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: tx,
+    });
+    setTxReceipt(receipt);
+
+    // (Optional) Get the source code of the embedded wallet
+    publicClient
+      .getCode({ address: embeddedWallet?.address as Address })
+      .then((res) => {
+        setSourceCode(res as Hex);
+      });
+
+    setIsLoading(false);
+    toast.success("Success");
+  };
+```
+
+Looks like a lot, but the majority of the code is optional. 
+Here's the important stuff:
+- We're using our `relayClient` to call the `execute` function on the embedded wallet.
+- During the tx, the embedded wallet is "enhanced" with the source code of the `DelegateContract`,
+since we're specified the `authorizationList` parameter.
+- The sequence of execution is as follows:
+  1. The relay client will call the `execute` function on the embedded wallet.
+  2. The embedded wallet calls the `mint` function on the MNT contract.
+  3. The embedded wallet calls the `transfer` function on the MNT contract.
+- All of this is also done gaslessly, since the gas is covered by the relayer 
+(Abstracted for the end user)
+
+### 3. `onUnauthorize`
+
+```tsx
+    setIsLoading(true);
+
+    // (Important) Sign the authorization using the embedded wallet 
+    const signedAuthorization = await signAuthorization({
+      contractAddress: zeroAddress,
+      chainId: sepolia.id,
+    });
+
+    // (Optional) For the source code to be removed immidiately, we have to send a redundant tx
+    const tx = await relayClient?.sendTransaction({
+      authorizationList: [signedAuthorization],
+      to: embeddedWallet?.address as Address,
+    });
+
+    // (Optional) Wait for the transaction receipt
+    const receipt = await publicClient.waitForTransactionReceipt({
+      hash: tx,
+    });
+    setTxReceipt(receipt);
+
+    // (Optional) Get the source code of the embedded wallet
+    publicClient
+      .getCode({ address: embeddedWallet?.address as Address })
+      .then((res) => {
+        setSourceCode(res as Hex);
+      });
+
+    setIsLoading(false);
+    toast.success("Unauthorized");
+```
+
+Quick rundown:
+- We're signing an authorization using the embedded wallet.
+- We're sending a redundant tx to remove the source code of the embedded wallet immidiately.
+
+<Callout type="info">
+    Note: we're setting the address of the source code contract to be the `zeroAddress`, 
+    which basically means removing the source code.
+
+    Also, the funny part is that for the modification to be reflected immidiately, 
+    we have to send a redundant tx with the `authorizationList` parameter set to the signed authorization.
+</Callout>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

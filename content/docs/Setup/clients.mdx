@@ -1,0 +1,48 @@
+---
+title: Clients
+description: Setting up the viem clients.
+---
+
+### 1. `src/lib/client.ts` setup
+
+<Callout type="info">
+In this demo, we will be using a "Relay Account" (not the EOA) to execute the Transaction. This is typically how EIP-7702 is used in practice, as the relayer can sponsor the gas fees to perform the Transaction.
+However, it is also possible for the EOA to sign and also execute the Transaction.
+</Callout>
+
+
+```ts
+import { privateKeyToAccount } from "viem/accounts";
+import { createPublicClient, createWalletClient, http, Hex } from "viem";
+import { sepolia } from "viem/chains";
+import { eip5792Actions } from "viem/experimental";
+
+const relayPrivateKey = import.meta.env.VITE_RELAY_PRIVATE_KEY;
+
+if (!relayPrivateKey) {
+  throw new Error(
+    "VITE_RELAY_PRIVATE_KEY is not set in the environment variables."
+  );
+}
+
+export const relayClient = createWalletClient({
+  account: privateKeyToAccount(relayPrivateKey as Hex),
+  transport: http(),
+  chain: sepolia,
+}).extend(eip5792Actions());
+
+export const publicClient = createPublicClient({
+  chain: sepolia,
+  transport: http(),
+});
+```
+
+Quick brief: 
+  - `relayClient` is used to call functions on our EOA / Embedded Wallet.
+  - `publicClient` is used to read data from the chain.
+  - `eip5792Actions` is experimental and not yet stable, but allows to have EIP-7702 compatible transactions.
+  - we're going to be sending txs on ethereum `sepolia` testnet, since it has 7702 enabled.
+
+
+We export these components to later use in `App.tsx`.
+

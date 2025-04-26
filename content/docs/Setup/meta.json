@@ -1,0 +1,5 @@
+{
+  "title": "Setup",
+  "description": "Setting up the project",
+  "pages": ["clone", "contract", "env", "configs", "clients"]
+}
